@@ -1,6 +1,6 @@
 from flask import Flask, render_template, jsonify
 from conf import METEO_API_KEY, NEWS_API_KEY
-from functions import extract_keywords
+from functions import extrait_mot_cle
 import json
 import requests
 # from flask_restful import Api, Resource, abort, reqparse
@@ -66,18 +66,15 @@ def newsapi():
             'message': 'La requête à l\'API news n\'a pas fonctionné. Voici le message renvoyé par l\'API : {}'.format(content['message'])
         }), 500
     
-    data = [] # On initialise une liste vide
-    for prev in content["articles"]:
-        name = prev['source']['name']
-        titre = prev['title']
-        date_publication = prev['publishedAt']
-        url = prev['url']
-        data.append([name,titre,date_publication,url])
-    return jsonify({
-    'status': 'ok', 
-    'data': data
-    })
+    keywords, articles = extrait_mot_cle(content["articles"])
 
+    return jsonify({
+        'status'   : 'ok',
+        'data'     :{
+            'keywords' : keywords[:100], # On retourne uniquement les 100 premiers mots
+            'articles' : articles
+        }
+    })
 @app.route("/dashboard/")
 def dashboard():
     return render_template('dashboard.html')
