@@ -1,15 +1,26 @@
 <!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Mon premier dashboard</title>
+
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://d3js.org/d3.v3.min.js"></script>
+    <script src="https://cdn.rawgit.com/novus/nvd3/v1.8.1/build/nv.d3.min.js"></script>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/wordcloud.js"></script> 
+
     <script src="/static/montdb.js"></script>
-    <title>TDB</title>
-</head>
-<body>
+
+    <link rel="stylesheet" type="text/css" href="/static/montdb.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.rawgit.com/novus/nvd3/v1.8.1/build/nv.d3.css">
+
+  </head>
+
+  <body>
 
     <div class="content">
+
       <header>
         <div class="header-background"></div>
         <div class="title">
@@ -18,18 +29,27 @@
           </h1>
         </div>
       </header>
-      
+
       <main>
         <div class="chartContainer">
+
+          <div id="actu" class="chart">
+            <div id="nuage">
+            </div>
+            <div id="listeArticles">
+              <text class="chartTitle">Articles</text>
+              <div id="tableauArticles"></div>
+            </div>
+          </div>
+
+          <div id="meteo" class="chart">
+            <text class="chartTitle">Prévision de température</text>
+            <svg></svg>
+          </div>
+
         </div>
       </main>
     </div>
-    <script type="text/javascript">
-        console.log("hello baby");
-    </script>
-</body>
+
+  </body>
 </html>
-
-
-
-

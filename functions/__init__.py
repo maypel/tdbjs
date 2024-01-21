@@ -1,71 +1,70 @@
 # -*- coding: utf-8 -*-
 import re
 
-def extrait_mot_cle(texts):
+def extract_keywords(texts):
     """
     Prends une liste de textes et en détecte les mots les plus fréquents. Cette fonction renvoie 
     la liste des textes et le comptage des mots.
     """
 
-    mot_cle = {}
+    keywords = {}
     articles = []
 
     for i, text in enumerate(texts):
         # Extraction des éléments selon la structure JSON renvoyée par l'API NEWSAPI.ORG
         source = text["source"]["name"]
-        titre = text["title"]
+        title = text["title"]
         description = text["description"]
         url = text["url"]
-        publiele = text['publishedAt']
-        contenu = text["content"]
+        content = text["content"]
 
         # Stockage des articles dans la variable articles
-        articles.append({'titre': titre, 'url': url, 'source':source, 'publiele': publiele})
+        articles.append({'title': title, 'url': url, 'source':source})
 
         # Détection des mots clés (mots les plus utilisés)
-        text = str(titre) + ' ' + str(description) + ' ' + str(contenu)
-        mots = normalise_and_get_mots(text)
+        text = str(title) + ' ' + str(description) + ' ' + str(content)
+        words = normalise_and_get_words(text)
 
         # Comptage des mots
-        for w in mots :
-            if w not in mot_cle:
-                mot_cle[w] = {'cnt': 1, 'articles':[i]}
+        for w in words :
+            if w not in keywords:
+                keywords[w] = {'cnt': 1, 'articles':[i]}
             else:
-                mot_cle[w]['cnt'] += 1
-                if i not in mot_cle[w]['articles']:
-                    mot_cle[w]['articles'].append(i)
+                keywords[w]['cnt'] += 1
+                if i not in keywords[w]['articles']:
+                    keywords[w]['articles'].append(i)
 
     # Tri des mots, du plus utilisé au moins utilisé
-    mot_cle = [{'mot':mot, **data} for mot,data in mot_cle.items()] 
-    mot_cle = sorted(mot_cle, key=lambda x: -x['cnt'])
+    keywords = [{'word':word, **data} for word,data in keywords.items()] 
+    keywords = sorted(keywords, key=lambda x: -x['cnt'])
 
-    return mot_cle, articles
+    return keywords, articles
 
-def load_stop_mots():
+def load_stop_words():
     """
-    Charge la liste des stopmots français (les mots très utilisés qui ne sont pas porteurs de sens comme LA, LE, ET, etc.)
+    Charge la liste des stopwords français (les mots très utilisés qui ne sont pas porteurs de sens comme LA, LE, ET, etc.)
     """
 
-    mots = []
-    # Ouverture du fichier "stop_mots.txt"
-    with open("stop_mots.txt") as f:
-        for mot in f.readlines():
-            mots.append(mot[:-1])
-    return mots
+    words = []
+    # Ouverture du fichier "stop_words.txt"
+    with open("stop_words.txt") as f:
+        for word in f.readlines():
+            words.append(word[:-1])
+    return words
 
-def normalise_and_get_mots(text):
+def normalise_and_get_words(text):
     """
     Prends un texte, le formate puis renvoie tous les mots significatifs qui le constituent
     """
 
-    stop_mots = load_stop_mots()
+    stop_words = load_stop_words()
 
     # Utilisation des expressions régulières (voir https://docs.python.org/3.7/library/re.html et https://openclassrooms.com/fr/courses/4425111-perfectionnez-vous-en-python/4464009-utilisez-des-expressions-regulieres)
     text = re.sub("\W"," ",text) # suppression de tous les caractères autres que des mots
     text = re.sub(" \d+", " ", text) # suppression des nombres
     text = text.lower() # convertit le texte en minuscules
-    mots = re.split("\s",text) # sépare tous les mots du texte
+    words = re.split("\s",text) # sépare tous les mots du texte
 
-    mots = [w for w in mots if len(w) > 2] # suppression des mots de moins de 2 caractères
-    mots = [w for w in mots if w not in stop_mots] # suppression des stopmots
-    return mots
+    words = [w for w in words if len(w) > 2] # suppression des mots de moins de 2 caractères
+    words = [w for w in words if w not in stop_words] # suppression des stopwords
+    return words
