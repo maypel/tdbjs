@@ -3,14 +3,14 @@ from conf import METEO_API_KEY, NEWS_API_KEY
 from functions import extract_keywords
 import json
 import requests
-# from flask_restful import Api, Resource, abort, reqparse
-# from flask_sqlalchemy import SQLAlchemy
+import datetime as dt
+import yfinance as yf 
+from pandas_datareader import data as pdr
+import pandas as pd
+from googlesearch import search
 
-# set app et api
+# set app
 app= Flask(__name__)
-# api = Api(app)
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
-# db = SQLAlchemy(app)
 
 
 if METEO_API_KEY is None:
@@ -35,7 +35,7 @@ def dashboard():
 def meteo():
     response = requests.get(METEO_API_URL)
     content = json.loads(response.content.decode('utf-8'))
-
+    print(f"api_meteo content : {content}")
     if response.status_code != 200:
         return jsonify({
             'status': 'error',
@@ -61,7 +61,7 @@ def get_news():
     response = requests.get(NEWS_API_URL)
 
     content = json.loads(response.content.decode('utf-8'))
-    print(content)
+    print(f"api_news content : {content}")
 
     if response.status_code != 200:
         return jsonify({
@@ -71,7 +71,8 @@ def get_news():
 
 
     keywords, articles = extract_keywords(content["articles"])
-
+    print(f"keywords : {keywords}")
+    print(f"articles : {articles}")
     return jsonify({
         'status'   : 'ok',
         'data'     :{
@@ -80,6 +81,141 @@ def get_news():
         }
     })
 
+@app.route("/api/finance/")
+def finance():
 
+    end = dt.datetime.now()
+    start = dt.datetime(2024,1,1)
+
+    yf.pdr_override()
+    df = pdr.get_data_yahoo('BTC-USD', start, end)
+    df_json = df.to_json()
+    # df.head()
+
+    # if response.status_code != 200:
+    #     return jsonify({
+    #         'status': 'error',
+    #         'message': 'La requête à l\'API des articles d\'actualité n\'a pas fonctionné. Voici le message renvoyé par l\'API : {}'.format(content['message'])
+    #     }), 500
+
+    return jsonify({
+      'status': 'ok', 
+      'data': df_json
+    })
+
+
+@app.route("/api/nba_games/")
+def recherche_1():
+
+    # response = requests.get(url="https://www.nba.com/games")
+    response = requests.get(url="https://cdn.nba.com/static/json/liveData/scoreboard/todaysScoreboard_00.json")
+    content = json.loads(response.content.decode('utf-8'))
+    # print(f"api_news content : {content}")
+    data = {
+    'gameTimeUTC': [],
+    'homeTeamName': [],
+    'homeTeamScore': [],
+    'awayTeamName': [],
+    'awayTeamScore': [],
+    'homeLeaderName': [],
+    'homeLeaderPoints': [],
+    'homeLeaderRebounds': [],
+    'homeLeaderAssists': [],
+    'awayLeaderName': [],
+    'awayLeaderPoints': [],
+    'awayLeaderRebounds': [],
+    'awayLeaderAssists': [],
+}
+
+    games = content['scoreboard']['games']
+
+    for game in games:
+        data['gameTimeUTC'].append(game['gameTimeUTC'])
+        data['homeTeamName'].append(game['homeTeam']['teamName'])
+        data['homeTeamScore'].append(game['homeTeam']['score'])
+        data['awayTeamName'].append(game['awayTeam']['teamName'])
+        data['awayTeamScore'].append(game['awayTeam']['score'])
+
+        home_leader = game['gameLeaders']['homeLeaders']
+        away_leader = game['gameLeaders']['awayLeaders']
+
+        data['homeLeaderName'].append(home_leader['name'])
+        data['homeLeaderPoints'].append(home_leader['points'])
+        data['homeLeaderRebounds'].append(home_leader['rebounds'])
+        data['homeLeaderAssists'].append(home_leader['assists'])
+
+        data['awayLeaderName'].append(away_leader['name'])
+        data['awayLeaderPoints'].append(away_leader['points'])
+        data['awayLeaderRebounds'].append(away_leader['rebounds'])
+        data['awayLeaderAssists'].append(away_leader['assists'])
+
+    # Créer un DataFrame pandas
+    df = pd.DataFrame(data)
+    df_json = df.to_json()
+    # df.head()
+
+    # if response.status_code != 200:
+    #     return jsonify({
+    #         'status': 'error',
+    #         'message': 'La requête à l\'API des articles d\'actualité n\'a pas fonctionné. Voici le message renvoyé par l\'API : {}'.format(content['message'])
+    #     }), 500
+
+    return jsonify({
+      'status': 'ok', 
+      'data': df_json
+    })
+
+@app.route("/api/nba_rookies/")
+def recherche_2():
+    response = requests.get(url="https://stats.nba.com/stats/leagueLeaders?LeagueID=00&PerMode=PerGame&Scope=Rookies&Season=2023-24&SeasonType=Regular%20Season&StatCategory=PTS")
+    content = json.loads(response.content.decode('utf-8'))
+    # print(f"content : {content}")
+
+    df = pd.DataFrame(content['resultSet']['rowSet'], columns=content['resultSet']['headers'])
+
+    print(df)
+
+    # Filtrer les dix premiers joueurs
+    top_ten_players = df.head(10)
+
+    # Afficher le résultat
+    print(top_ten_players)
+
+    # Filtrer les résultats de Victor Wembanyama
+    wembanyama_results = df[df['PLAYER'] == 'Victor Wembanyama']
+
+    # Afficher le résultat
+    print(wembanyama_results)
+    df_json = wembanyama_results.to_json()
+    # df.head()
+
+    # if response.status_code != 200:
+    #     return jsonify({
+    #         'status': 'error',
+    #         'message': 'La requête à l\'API des articles d\'actualité n\'a pas fonctionné. Voici le message renvoyé par l\'API : {}'.format(content['message'])
+    #     }), 500
+
+    return jsonify({
+      'status': 'ok', 
+      'data': df_json
+    })
+
+@app.route("/api/articles/")
+def get_google_results(num_results=10):
+    results = []
+
+    try:
+        query = "cours bitcoin"
+        # Effectue la recherche et récupère les résultats
+        for j in search(query, num_results=num_results):
+            results.append({'link': j})
+
+    except Exception as e:
+        print(f"Une erreur s'est produite : {e}")
+
+    return jsonify({
+      'status': 'ok', 
+      'data': results
+    })
 if __name__ == "__main__":
     app.run(debug=True)
