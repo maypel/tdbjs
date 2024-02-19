@@ -35,7 +35,7 @@ def dashboard():
 def meteo():
     response = requests.get(METEO_API_URL)
     content = json.loads(response.content.decode('utf-8'))
-    print(f"api_meteo content : {content}")
+    # print(f"api_meteo content : {content}")
     if response.status_code != 200:
         return jsonify({
             'status': 'error',
@@ -61,7 +61,7 @@ def get_news():
     response = requests.get(NEWS_API_URL)
 
     content = json.loads(response.content.decode('utf-8'))
-    print(f"api_news content : {content}")
+    # print(f"api_news content : {content}")
 
     if response.status_code != 200:
         return jsonify({
@@ -71,8 +71,10 @@ def get_news():
 
 
     keywords, articles = extract_keywords(content["articles"])
-    print(f"keywords : {keywords}")
-    print(f"articles : {articles}")
+    print(type(keywords))
+    print(type(articles))
+    # print(f"keywords : {keywords}")
+    # print(f"articles : {articles}")
     return jsonify({
         'status'   : 'ok',
         'data'     :{
@@ -82,14 +84,17 @@ def get_news():
     })
 
 @app.route("/api/finance/")
-def finance():
+def finance_result():
 
     end = dt.datetime.now()
     start = dt.datetime(2024,1,1)
 
     yf.pdr_override()
     df = pdr.get_data_yahoo('BTC-USD', start, end)
-    df_json = df.to_json()
+    print(type(df))
+    df_json = df.to_dict("records") 
+    # df_json = df.to_json(orient='split')
+    print(1, type(df_json))
     # df.head()
 
     # if response.status_code != 200:
@@ -173,19 +178,19 @@ def recherche_2():
 
     df = pd.DataFrame(content['resultSet']['rowSet'], columns=content['resultSet']['headers'])
 
-    print(df)
+    # print(df)
 
     # Filtrer les dix premiers joueurs
     top_ten_players = df.head(10)
 
     # Afficher le résultat
-    print(top_ten_players)
+    # print(top_ten_players)
 
     # Filtrer les résultats de Victor Wembanyama
     wembanyama_results = df[df['PLAYER'] == 'Victor Wembanyama']
 
     # Afficher le résultat
-    print(wembanyama_results)
+    # print(wembanyama_results)
     df_json = wembanyama_results.to_json()
     # df.head()
 
