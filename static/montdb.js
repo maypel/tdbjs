@@ -1,3 +1,5 @@
+// RECUPERATION DES DONNEES
+
 // contient les articles de presse, qui doivent être 
 // gardés en mémoire même après affichage du graphique
 let news_data;
@@ -11,24 +13,43 @@ $.ajax({
           success: display_news
 });
 
+// Chargement des données googles
+$.ajax({
+    url: "/api/articles/",
+    success: consoleLogResult
+});
+
+
 // Chargement des données météo
 d3.json('/api/meteo', display_nvd3_graph);
 
 // Chargement des données finance
 d3.json('/api/finance', display_nvd3_graph_finance);
 
+// ----------------------------------------------------------------- //
+// AFFICHAGES DES RESULTATS DANS LE TDB
+
+// affichage des résultats google dans la console 
+function consoleLogResult(result) {
+    console.log("voici les resultats de google :")
+    console.log(result)
+    display_research(result)
+}
+
+// recupere resultat et appelle 2 fonctions d'affichage
 function display_news(result) {
-    console.log(1)
-	console.log(typeof(result))
-	console.log((result))
+    // console.log(1)
+	// console.log(typeof(result))
+	// console.log((result))
     news_data = result["data"];
-    console.log(2)
-    console.log(typeof(news_data))
-    console.log((news_data))
+    // console.log(2)
+    // console.log(typeof(news_data))
+    // console.log((news_data))
     display_wordcloud(news_data);
     display_all_articles();
 }
 
+// permet d'afficher un nuage de mots en récupérant les mots les plus écris dans les articles
 function display_wordcloud(news_data) {
 
     let data = [];
@@ -40,6 +61,7 @@ function display_wordcloud(news_data) {
             name: keywords[i]["word"],
             weight: keywords[i]['cnt'],
             events: {
+                // on filtre les articles en cliquant sur les mots dans le nuage
                 click: function(event) {
                     let keyword = event.point.name;
                     display_articles_from_word(keyword);
@@ -71,13 +93,7 @@ function display_wordcloud(news_data) {
     });
 }
 
-function display_all_articles() {
-    let all_articles = []
-    for (i = 0; i < news_data['articles'].length; i++)
-        all_articles.push(i);
-    display_articles(all_articles);
-}
-
+// récupère les articles en fonction des mots (filtre)
 function display_articles_from_word(word) {
     let articles;
     for (i in news_data['keywords']) {
@@ -86,9 +102,19 @@ function display_articles_from_word(word) {
             break;
         }
     }
+    // affiche les articles filtré par mot
     display_articles(articles);
 };
 
+// récupère tous les articles
+function display_all_articles() {
+    let all_articles = []
+    for (i = 0; i < news_data['articles'].length; i++)
+        all_articles.push(i);
+    display_articles(all_articles);
+}
+
+// affiche les articles dans un tableau
 function display_articles(articles) {
     let div = $("#tableauArticles").html("");
     div.append("<table></table");
@@ -104,17 +130,17 @@ function display_articles(articles) {
 }
 
 function display_nvd3_graph(data) {
-    console.log(typeof(data))
+    // console.log(typeof(data))
     if (data["status"] == "ok") {
         let temperature_data = [{
             key: 'Température',
             values: data["data"]
         }]
-        console.log(3)
-        console.log(typeof(temperature_data))
+        // console.log(3)
+        // console.log(typeof(temperature_data))
         let first_date = temperature_data[0]['values'][0][0];
-        console.log(4)
-        console.log(typeof(first_date))
+        // console.log(4)
+        // console.log(typeof(first_date))
         nv.addGraph(function() {
 
             let chart = nv.models.lineWithFocusChart()
@@ -168,19 +194,19 @@ function display_nvd3_graph_finance(data) {
     console.log(typeof(data))
     if (data["status"] == "ok") {
          let boulbi = data['data'];
-    console.log(5)
-    console.log(typeof(boulbi))
+    // console.log(5)
+    // console.log(typeof(boulbi))
 
     // for (i in boulbi){
     //     console.log('boulbi :')
     //     console.log(i)
     // };
          
-    for (values in data) {
-        console.log(data[values])
-        console.log(typeof(data[values]))
-        console.log(values.Open)
-        console.log(values.valueOf())
+    // for (values in data) {
+    //     console.log(data[values])
+    //     console.log(typeof(data[values]))
+    //     console.log(values.Open)
+    //     console.log(values.valueOf())
         
         // let High = data.High 
         // let Low = data.Low 
@@ -198,7 +224,7 @@ function display_nvd3_graph_finance(data) {
         }
     
 //     display_articles(articles);
-};
+// };
 
 // chart = {
 //     // Declare the chart dimensions and margins.
@@ -256,3 +282,18 @@ function display_nvd3_graph_finance(data) {
   
 //     return svg.node();
 //   }
+
+// affiche les articles dans un tableau
+function display_research(articles) {
+    let div = $("#tableauArticles").html("");
+    div.append("<table></table");
+    let tab = $("#tableauArticles table");
+    for (i in articles) {
+        let article = news_data['articles'][articles[i]];
+        let title = article["title"];
+        let source = article["source"];
+        let url = article["url"];
+        let newLine = "<tr><td class='newspaper'>" + source + "</td><td><a target='_blank'href='" + url + "'>" + title + "</a></td></tr>"
+        tab.append(newLine);
+    }
+}

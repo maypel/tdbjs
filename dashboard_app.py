@@ -156,7 +156,9 @@ def recherche_1():
 
     # Créer un DataFrame pandas
     df = pd.DataFrame(data)
+    print(f"df : {df}")
     df_json = df.to_json()
+    print(f"df_json : {df_json}")
     # df.head()
 
     # if response.status_code != 200:
